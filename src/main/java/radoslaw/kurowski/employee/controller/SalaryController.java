@@ -2,19 +2,21 @@ package radoslaw.kurowski.employee.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 import radoslaw.kurowski.employee.exception.ResourceNotFoundException;
+import radoslaw.kurowski.employee.helper.SalaryHelper;
 import radoslaw.kurowski.employee.model.Employee;
 import radoslaw.kurowski.employee.model.Salary;
+import radoslaw.kurowski.employee.model.SalaryPeriod;
 import radoslaw.kurowski.employee.repository.EmployeeRepository;
 import radoslaw.kurowski.employee.repository.SalaryRepository;
 
 import javax.validation.Valid;
-import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+
+import static java.util.Optional.ofNullable;
 
 @RestController
 public class SalaryController {
@@ -28,29 +30,32 @@ public class SalaryController {
 
     /**
      * This method returns all salaries from salary table
+     *
      * @return List of salaries objects
      */
     @GetMapping("/getAllSalaries")
-    public List<Salary> getAllSalaries(){
+    public List<Salary> getAllSalaries() {
         return salaryRepository.findAll();
     }
 
     /**
      * Return all salaries that are assign to employee with id passed as aprameter
+     *
      * @param employeeId used to identify employee in db
      * @return list of salaries
      */
     @GetMapping("/employee/{employeeId}/getSalaries")
     public List<Salary> getSalaryByEmployeeId(@PathVariable Long employeeId) {
-        return Optional.ofNullable(salaryRepository.findByEmployeeId(employeeId))
+        return ofNullable(salaryRepository.findByEmployeeId(employeeId))
                 .orElse(Collections.emptyList());
     }
 
 
     /**
      * Adding salary to Salary table in database
+     *
      * @param employeeId Employee that salary is assign to
-     * @param salary object to add into salary table in database
+     * @param salary     object to add into salary table in database
      * @return Added Salary if object was successfully added to db
      */
     @PostMapping("/employee/{employeeId}/addSalary")
@@ -70,9 +75,8 @@ public class SalaryController {
         Employee employee;
         if (!employeeRepository.existsById(employeeId)) {
             throw new ResourceNotFoundException("Employee with id " + employeeId + " not found");
-        }
-        else{
-             employee= employeeRepository.findById(employeeId).get();
+        } else {
+            employee = employeeRepository.findById(employeeId).get();
         }
         return salaryRepository.findById(salaryId)
                 .map(salary -> {
@@ -99,12 +103,17 @@ public class SalaryController {
                     return ResponseEntity.ok().build();
                 }).orElseThrow(() -> new ResourceNotFoundException("Salary with id " + salaryId + "not found"));
     }
+
     @PostMapping("getAvgSalaries/{employeeId}")
-    public double lastYearAvgSalary(@PathVariable Long employeeId){
-        double avgSalary=0;
-        LocalDate theEarliestDate= LocalDate.now().minusYears(1);
-        Optional.ofNullable(salaryRepository.findByEmployeeId(employeeId));
-        return avgSalary;
+    public double lastYearAvgSalary(@PathVariable Long employeeId) {
+        return new SalaryHelper().getLastYearAvgSalary(Optional.ofNullable(salaryRepository.findByEmployeeId(employeeId)));
     }
+
+    @PostMapping("getPeriodAvgSalaries/{employeeId}")
+    public double getPeriodAvgSalary(@PathVariable Long employeeId,
+                                     @Valid @RequestBody SalaryPeriod period){
+        return new SalaryHelper().getAvgSalaryForPeriod(period.getPeriodStart(), period.getPeriodEnd(), salaryRepository.findByEmployeeId(employeeId));
+    }
+
 
 }
