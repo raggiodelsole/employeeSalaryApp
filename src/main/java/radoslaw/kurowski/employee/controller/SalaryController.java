@@ -27,6 +27,8 @@ public class SalaryController {
     @Autowired
     private EmployeeRepository employeeRepository;
 
+    @Autowired
+    private SalaryHelper salaryHelper;
 
     /**
      * This method returns all salaries from salary table
@@ -104,15 +106,15 @@ public class SalaryController {
                 }).orElseThrow(() -> new ResourceNotFoundException("Salary with id " + salaryId + "not found"));
     }
 
-    @PostMapping("getAvgSalaries/{employeeId}")
+    @GetMapping("getAvgSalaries/{employeeId}")
     public double lastYearAvgSalary(@PathVariable Long employeeId) {
-        return new SalaryHelper().getLastYearAvgSalary(Optional.ofNullable(salaryRepository.findByEmployeeId(employeeId)));
+        return salaryHelper.getLastYearAvgSalary(Optional.ofNullable(salaryRepository.findByEmployeeId(employeeId)));
     }
 
     @PostMapping("getPeriodAvgSalaries/{employeeId}")
     public double getPeriodAvgSalary(@PathVariable Long employeeId,
-                                     @Valid @RequestBody SalaryPeriod period){
-        return new SalaryHelper().getAvgSalaryForPeriod(period.getPeriodStart(), period.getPeriodEnd(), salaryRepository.findByEmployeeId(employeeId));
+                                     @Valid @RequestBody SalaryPeriod period) {
+        return salaryHelper.getAvgSalaryForPeriod(period.getPeriodStart(), period.getPeriodEnd(), salaryRepository.findByEmployeeId(employeeId));
     }
 
 
